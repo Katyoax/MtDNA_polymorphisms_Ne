@@ -1,0 +1,80 @@
+rm(list=ls(all=TRUE))
+
+setwd("../../ /Body/2_Derived")
+filelist <- list.files(pattern=".*\\.PairwiseComparisons\\.txt")
+spname = read.table('Abrothrix_longipilis.CytB.PairwiseComparisons.txt', header = TRUE)
+spname$PairOfAnimals = paste(spname$Sequence1,spname$Sequence2,sep='-')
+spname$NumberOfMutations = 1
+AGG1 = aggregate(spname$NumberOfMutations, by = list(spname$PairOfAnimals), FUN = sum)
+AGG1 = data.frame(AGG1)
+median(AGG1$x)
+hist(AGG1$x, breaks=c(0, seq(10,140, by=10)),
+     col = "skyblue",
+     main = NULL , 
+     xlab = "median rate")
+ abline(v = median(AGG1$x),
+       col = "red",
+       lwd = 2)
+legend(x = "topleft", # location of legend within plot area
+       c("Median"),
+       col = c("red"),
+       lwd = c(2))
+      
+
+
+
+
+final <- c()
+sp = c()
+for (f in 1:length(filelist)) 
+{ 
+  filelist[f]
+  File = read.table(filelist[f], header = TRUE)
+  File$PairOfAnimals = paste(File$Sequence1,File$Sequence2,sep='-')
+  
+  #as.character(File$Gene)
+  
+  
+  
+  # 2 COUNT MUTATIONS PER PAIRS
+  
+  File$NumberOfMutations = 1
+  AGG1 = aggregate(File$NumberOfMutations, by = list(File$PairOfAnimals), FUN = sum)
+  sp = rbind(sp, c(as.character(File$Species[1]),as.character(File$Gene[1]), File$PairOfAnimals, AGG1$x, median(AGG1$x)))
+  final <- rbind(final, c(as.character(File$Species[1]),as.character(File$Gene[1]),median(AGG1$x),File$NumberOfCodons[1], as.character(File$SubstType[1])))
+}
+for (f in 1:length(filelist)) 
+{ 
+  filelist[f]
+  File = read.table(filelist[f], header = TRUE)
+  File$PairOfAnimals = paste(File$Sequence1,File$Sequence2,sep='-')
+   
+  #as.character(File$Gene)
+  
+  
+  
+  # 2 COUNT MUTATIONS PER PAIRS
+  
+  File$NumberOfMutations = 1
+  AGG1 = aggregate(File$NumberOfMutations, by = list(File$PairOfAnimals), FUN = sum)
+  sp = rbind(sp, c(as.character(File$Species[1]),as.character(File$Gene[1]), File$PairOfAnimals, AGG1$x, median(AGG1$x)))
+  final <- rbind(final, c(as.character(File$Species[1]),as.character(File$Gene[1]),median(AGG1$x),File$NumberOfCodons[1], as.character(File$SubstType[1])))
+}
+temp=final
+temp2=sp
+sp = data.frame(temp2)
+final = data.frame(temp)
+final = final[final$X2 == 'CytB',]
+# 1 FILTERS OF MUTATIONS
+
+final = final[final$X5 == 'syn',]
+names(final)=c('Species','Gene','MedianPolym','NumberOfCodons', 'SubT')
+final$MedianPolym = as.numeric(as.character(final$MedianPolym))
+final$NumberOfCodons = as.numeric(as.character(final$NumberOfCodons))
+final$Polym = final$MedianPolym/final$NumberOfCodons
+setwd("../../Body/3_PolymorphismStat") 
+write.table(final, file = paste('PolymorphismStattest.txt',sep = '.'), quote = FALSE, row.names = FALSE)
+
+
+
+  
