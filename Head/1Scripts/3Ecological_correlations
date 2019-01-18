@@ -1,0 +1,128 @@
+rm(list=ls(all=TRUE))
+
+########### READ
+setwd("../../Body/3_PolymorphismStat")
+Pol = read.table('PolymorphismStat.txt', header = TRUE)
+length(unique(Pol$Species))
+
+setwd('../../Body/1_Raw')
+GenLength = read.table('GenerationLenghtforMammals.xlsx.txt', sep = '\t', header = TRUE)
+GenLength$Species = gsub(' ','_',GenLength$Scientific_name)
+
+setwd('../../Body/1_Raw')
+Tax = read.table('names.stat', sep = '\t')
+Tax$Species = gsub(' ','_',Tax$V1)
+Tax$Species = gsub(";(.*)",'',Tax$Species)
+Tax$Class = gsub(";Chordata(.*)",'',Tax$V1)
+Tax$Class = gsub("(.*);",'',Tax$Class)
+
+
+setwd('../../Body/1_Raw')
+AnAge = read.table('anage_data.txt', sep = '\t', header = TRUE)
+AnAge$Species = paste(AnAge$Genus,AnAge$Species, sep = '_')
+
+########### MERGE MAMMALS WITH GENERATION TIME AND ANALYSE CORRELATION (WE CAN ADD IUCN IN THE FUTURE)
+Mammals = merge(Pol,GenLength)
+Mammals = data.frame(Mammals)
+Mammals$NumberOfCodons <- NULL
+Mammals$MedianPolym <- NULL
+Mammals$Genus <- NULL
+Mammals$Scientific_name <- NULL
+Mammals$AdultBodyMass_g <- NULL
+Mammals$Sources_AdultBodyMass <- NULL
+Mammals$Sources_Max_longevity <- NULL
+Mammals$Rspan_d <- NULL
+Mammals$AFR_d <- NULL
+Mammals$Data_AFR <- NULL
+Mammals$Calculated_GL_d  <- NULL
+Mammals$Sources_GL <- NULL
+Mammals$Max_longevity_d <- NULL
+write.table(Mammals, file = paste('Mammals.txt',sep = '.'), quote = FALSE, row.names = FALSE)
+
+
+
+
+
+#Keeps <- c('Species','Polym','GenerationLength_d')
+#Keeps = data.frame(Keeps)
+#Keeps$Species = 
+#write.table(Keeps, file = paste('Mam.txt',sep = '.'), quote = FALSE, row.names = FALSE)
+
+##### GENERATION LENGTH
+cor.test(Mammals$Polym,Mammals$GenerationLength_d, method = 'spearman') # negative
+setwd('/Users/mac/Downloads/BioDiversity/Body/4_Figures')
+pdf('MammalsPolymorphismGLength.pdf')
+plot(log2(Mammals$GenerationLength_d),log2(Mammals$Polym))
+dev.off()
+
+
+### BODY MASS
+cor.test(Mammals$Polym,Mammals$AdultBodyMass_g, method = 'spearman') # negative
+setwd('/Users/mac/Downloads/BioDiversity/Body/4_Figures')
+pdf('MammalsPolymorphismBodyMass.pdf')
+plot(log2(Mammals$AdultBodyMass_g),log2(Mammals$Polym))
+dev.off()
+
+########### MERGE OTHER FREQUENT CLASSES (Actinopterygii, Aves, Reptilia) WITH ECOLOGY AND ANALYSE CORRELATIONS (WE CAN ADD IUCN IN THE FUTURE)
+##### body mass works better for aves!? why??
+AnAge = merge(Pol,AnAge)
+table(AnAge$Class) # Actinopterygii   Aves Reptilia
+
+
+##ACTINOPTERIGII
+#### Actinopterigii MAXIMUM LONGEVITY
+cor.test(AnAge[AnAge$Class == 'Actinopterygii',]$Polym,AnAge[AnAge$Class == 'Actinopterygii',]$Maximum.longevity..yrs., method = 'spearman')
+pdf('ActinopterigiiMaxLongev.pdf')
+plot(log2(AnAge[AnAge$Class == 'Actinopterygii',]$Maximum.longevity..yrs.),log2(AnAge[AnAge$Class == 'Actinopterygii',]$Polym))
+dev.off()
+
+#### Actinopterigii ADULT WEIGHT
+cor.test(AnAge[AnAge$Class == 'Actinopterygii',]$Polym,AnAge[AnAge$Class == 'Actinopterygii',]$Adult.weight..g., method = 'spearman')
+pdf('ActinopterigiiAdultWeight.pdf')
+plot(log2(AnAge[AnAge$Class == 'Actinopterygii',]$Adult.weight..g.),log2(AnAge[AnAge$Class == 'Actinopterygii',]$Polym))
+dev.off()
+
+
+####AVES
+#### MAX LONGEV
+cor.test(AnAge[AnAge$Class == 'Aves',]$Polym,AnAge[AnAge$Class == 'Aves',]$Maximum.longevity..yrs., method = 'spearman')
+pdf('AvesMaxLong.pdf')
+plot(log2(AnAge[AnAge$Class == 'Aves',]$Maximum.longevity..yrs.),log2(AnAge[AnAge$Class == 'Aves',]$Polym))
+dev.off()
+
+#### ADULT WEIGHT
+cor.test(AnAge[AnAge$Class == 'Aves',]$Polym,AnAge[AnAge$Class == 'Aves',]$Adult.weight..g., method = 'spearman')
+pdf('AvesAdultWeight.pdf')
+plot(log2(AnAge[AnAge$Class == 'Aves',]$Adult.weight..g.),log2(AnAge[AnAge$Class == 'Aves',]$Polym))
+dev.off()
+
+cor.test(AnAge[AnAge$Class == 'Aves',]$Polym,AnAge[AnAge$Class == 'Aves',]$Body.mass..g., method = 'spearman') 
+plot(log2(AnAge[AnAge$Class == 'Aves',]$Body.mass..g.),log2(AnAge[AnAge$Class == 'Aves',]$Polym))
+
+#### Reptilia
+#### MAX LONGEV
+cor.test(AnAge[AnAge$Class == 'Reptilia',]$Polym,AnAge[AnAge$Class == 'Reptilia',]$Maximum.longevity..yrs., method = 'spearman') # negative
+pdf('ReptiliaMaxLong.pdf')
+plot(log2(AnAge[AnAge$Class == 'Reptilia',]$Maximum.longevity..yrs.),log2(AnAge[AnAge$Class == 'Reptilia',]$Polym)) # negative
+dev.off()
+
+#### ADULT WEIGHT
+cor.test(AnAge[AnAge$Class == 'Reptilia',]$Polym,AnAge[AnAge$Class == 'Reptilia',]$Adult.weight..g., method = 'spearman') # negative
+pdf('ReptiliaAdultWeight.pdf')
+plot(log2(AnAge[AnAge$Class == 'Reptilia',]$Adult.weight..g.),log2(AnAge[AnAge$Class == 'Reptilia',]$Polym)) # negative
+dev.off()
+
+#### BODY MASS
+cor.test(AnAge[AnAge$Class == 'Reptilia',]$Polym,AnAge[AnAge$Class == 'Reptilia',]$Body.mass..g., method = 'spearman') # negative
+pdf('ReptiliaBodyMass.pdf')
+plot(log2(AnAge[AnAge$Class == 'Reptilia',]$Body.mass..g.),log2(AnAge[AnAge$Class == 'Reptilia',]$Polym)) # negative
+dev.off()
+
+########### SPLIT ACCORDING TO CLASSES
+Taxa = merge(Pol,Tax)
+table(Taxa$Class) # Actinopteri, Aves, Mammalia, Amphibia, Squamata
+pdf('PolymorphismChordataClasses.pdf')
+boxplot(Taxa[Taxa$Class == 'Actinopteri',]$Polym,Taxa[Taxa$Class == 'Amphibia',]$Polym,Taxa[Taxa$Class == 'Squamata',]$Polym,Taxa[Taxa$Class == 'Mammalia',]$Polym,Taxa[Taxa$Class == 'Aves',]$Polym, notch = TRUE, outline = FALSE, names = c('Actinopteri','Amphibia','Squamata','Mammalia','Aves'))
+dev.off()
+
+
