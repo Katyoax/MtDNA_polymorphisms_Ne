@@ -1,0 +1,103 @@
+rm(list=ls(all=TRUE))
+
+setwd("../../Body/1_Raw")
+filelist <- list.files(pattern=".*\\.terminals\\.nuc\\.fa")
+length(filelist)
+library("Biostrings")
+
+ThresholdNumberOfSpecies = 20
+
+for (f in 1:length(filelist)) 
+{ 
+  # f = 1
+  final <- c()
+  setwd("../../Body/1_Raw") 
+  filelist[f]
+  Species.Gene = gsub('.terminals.nuc.fa','',filelist[f]); 
+  Species = gsub("\\.(.*)",'',Species.Gene); 
+  Gene = gsub("(.*)\\.",'',Species.Gene); 
+  dna <- readDNAStringSet(filelist[f])   
+  #### DELETE OUTGROUP:
+  dna  = data.frame(dna) 
+  dna$names = row.names(dna)
+  dna = dna[dna$names != 'OUTGRP',]
+  
+  NumberOfSpecies = nrow(dna)
+  
+  if (nrow(dna)>=ThresholdNumberOfSpecies)
+  {
+  dna=dna[sample(nrow(dna),ThresholdNumberOfSpecies),]
+  
+  #### CHECK FOR TRIPLETS AND STOP CODON
+
+  dna$DividedByTreeWithoutLeft = 1
+  dna$IfThereIsStopCodon = 1
+  for (x in 1:nrow(dna)) 
+  { # x = 1
+    Nucleotides = dna$dna[x]
+    Nucleotides = seqinr::s2c(Nucleotides)
+    dna$DividedByTreeWithoutLeft[x] = length(Nucleotides) %% 3 
+    AminoAcids = seqinr::translate(Nucleotides, numcode = 2); length(AminoAcids)
+    AminoAcids = paste(AminoAcids, collapse = '');  # AminoAcids = 'ATGCFDS*'
+    dna$IfThereIsStopCodon[x] = length(grep("\\*",AminoAcids))  # stop codon = *  
+  } 
+  dna = dna[dna$IfThereIsStopCodon == 0 & dna$DividedByTreeWithoutLeft == 0,]  #
+  
+  if(nrow(dna) >= ThresholdNumberOfSpecies)
+  {
+  # if there is stop codon at the end - it is ok
+  # if there is at least one '-' aminoacid = X 
+
+  #### PAIRWISE COMPARISONS -> POLYMORPHISM
+  
+  for (FirstSeqPos in 1:nrow(dna))
+  {
+    for (SecondSeqPos in 1:nrow(dna))
+    {
+      if (FirstSeqPos < SecondSeqPos)
+      {  #  FirstSeqPos = 1 
+        # SecondSeqPos = 2
+        s1 = seqinr::s2c(dna$dna[FirstSeqPos])
+        s2 = seqinr::s2c(dna$dna[SecondSeqPos])
+        
+        cdns1 <- seqinr::splitseq(s1, 0, 3) #sub-sequences (codons)
+        cdns2 <- seqinr::splitseq(s2, 0, 3)
+        
+        NumberOfCodons = length(cdns1)
+        codonposition <-c(1:length(cdns1))
+        for (x in codonposition)
+        {
+          if (cdns1[x] != cdns2[x])
+          {
+            taa1 <- seqinr::translate(seqinr::s2c(cdns1[x]), frame = 0, sens = "F", numcode = 2, NAstring = "X", ambiguous = FALSE)
+            taa2 <- seqinr::translate(seqinr::s2c(cdns2[x]), frame = 0, sens = "F", numcode = 2, NAstring = "X", ambiguous = FALSE)
+            final <- rbind(final, c(dna$names[FirstSeqPos], dna$names[SecondSeqPos], x, cdns1[x], cdns2[x], taa1, taa2))
+            
+            colnames(final) <- c('firstseq','secondseq', 'codposition', 'cod1', 'cod2', 'aa1', 'aa2')
+          }
+          
+        }
+      }
+    }
+  } 
+  final = data.frame(final)
+  final<- data.frame(lapply(final, as.character), stringsAsFactors=FALSE)
+  for (i in 1:nrow(final)) {
+    if (final$aa1[i] == final$aa2[i]) {
+      final$subst[i] = "syn"
+    } else {
+      final$subst[i] = "nonsyn"
+     }
+  }
+  final$Species = Species;
+  final$Gene = Gene;
+  final$NumberOfSpecies = NumberOfSpecies
+  final$NumberOfCodons = NumberOfCodons
+  names(final) = c('Sequence1', 'Sequence2', 'PositionOfTheCodon', 'Codon1', 'Codon2', 'AminoAcid1', 'AminoAcid2','SubstType','Species','Gene','NummberOfSpecies','NumberOfCodons')
+  setwd("/Users/mac/Downloads/BioDiversity/Body/2_Derived") 
+  write.table(final, file = paste(Species,Gene,'PairwiseComparisons.txt',sep = '.'), quote = FALSE, row.names = FALSE)
+  # rm(list=ls(dna,final));
+  gc();
+  }
+  } # if nrow < 20
+}
