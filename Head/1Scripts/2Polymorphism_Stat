@@ -1,6 +1,6 @@
 rm(list=ls(all=TRUE))
 
-setwd("../../ /Body/2_Derived")
+setwd("../../ /Body/2Derived")
 filelist <- list.files(pattern=".*\\.PairwiseComparisons\\.txt")
 spname = read.table('Abrothrix_longipilis.CytB.PairwiseComparisons.txt', header = TRUE)
 spname$PairOfAnimals = paste(spname$Sequence1,spname$Sequence2,sep='-')
