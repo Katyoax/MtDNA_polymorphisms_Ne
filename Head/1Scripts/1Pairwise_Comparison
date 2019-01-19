@@ -1,6 +1,6 @@
 rm(list=ls(all=TRUE))
 
-setwd("../../Body/1_Raw")
+setwd("../../Body/1Raw/Polarizedbr_Data")
 filelist <- list.files(pattern=".*\\.terminals\\.nuc\\.fa")
 length(filelist)
 library("Biostrings")
@@ -94,7 +94,7 @@ for (f in 1:length(filelist))
   final$NumberOfSpecies = NumberOfSpecies
   final$NumberOfCodons = NumberOfCodons
   names(final) = c('Sequence1', 'Sequence2', 'PositionOfTheCodon', 'Codon1', 'Codon2', 'AminoAcid1', 'AminoAcid2','SubstType','Species','Gene','NummberOfSpecies','NumberOfCodons')
-  setwd("/Users/mac/Downloads/BioDiversity/Body/2_Derived") 
+  setwd("../../Body/2Derived") 
   write.table(final, file = paste(Species,Gene,'PairwiseComparisons.txt',sep = '.'), quote = FALSE, row.names = FALSE)
   # rm(list=ls(dna,final));
   gc();
